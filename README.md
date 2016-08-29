@@ -93,6 +93,9 @@ none
 
 ## Changelog
 
+### 0.0.6
+- Fixing issues in workspace deployment
+
 ### 0.0.5
 - Minor fixes
 
