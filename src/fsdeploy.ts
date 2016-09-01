@@ -58,7 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     let onSave = vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
-        deploy(e.fileName);
+        let deployOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployOnSave", true);
+        if(deployOnSave) {
+            deploy(e.fileName);
+        }
     });
 
     let onOpen = vscode.window.onDidChangeActiveTextEditor((e: vscode.TextEditor) => {

@@ -13,6 +13,7 @@ For example if there is a file in your workspace under /usr/code/project/test.js
 > This extension contributes the following settings
 
 * `fsdeploy.nodes`: array of objects containing a source/target set.
+* `fsdeploy.deployOnSave`: boolean flag indicating if a file should get immeadiately deployed when saving. (Defaults to true.)
 
 > example:
 
@@ -24,7 +25,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
                   "include":"**/*.*",
                   "exclude":"**/min/*.*"
               }
-          ]
+          ],
+          "fsdeploy.deployOnSave": true
       }
 
 - You can have multiple targets for the same source. 
@@ -92,6 +94,9 @@ You would need to create a glob excluding src, build and /tests/:
 none
 
 ## Changelog
+
+### 0.1.1
+- Adding configuration to stop auto-deploy on save
 
 ### 0.1.0
 - Fixing NPE when accessing the status bar
