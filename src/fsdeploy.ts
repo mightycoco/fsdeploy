@@ -5,8 +5,7 @@
 // use https://octicons.github.com/ glyphs for window icons
 // marketplace: https://marketplace.visualstudio.com/items?itemName=mightycoco.fsdeploy
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-var fsext = require('fs-extra');
+import * as fs from 'fs-extra';
 
 let statusBarItem: vscode.StatusBarItem = null;
 
@@ -14,10 +13,13 @@ let statusBarItem: vscode.StatusBarItem = null;
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
+    console.log("activating fsdeploy...");
+    
     let cmdMenuOptions = vscode.commands.registerCommand('fsdeploy.menuFunctions', () => {
         let items:vscode.QuickPickItem[] = [];
         let wsnode = getWorkspaceDeployNodes();
-        let fpnode = getFileDeployNodes(vscode.window.activeTextEditor.document.fileName);
+        let fpnode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
+        console.log(wsnode, fpnode);
 
 	    items.push({
             label: "Deploy File", 
@@ -27,8 +29,11 @@ export function activate(context: vscode.ExtensionContext) {
 	    items.push({
             label: "Deploy Workspace", 
             description: "Deploy all files in the current workspace", 
-            detail: wsnode != null ? `'${wsnode[0].source.toLowerCase()}' to '${wsnode[0].target.toLowerCase()}'` : null 
+            detail: wsnode.length > 0 ? `'${wsnode[0].source.toLowerCase()}' to '${wsnode[0].target.toLowerCase()}'` : null 
         });
+        
+        console.log(3);
+
 
         vscode.window.showQuickPick(items, {matchOnDescription: true, placeHolder: "Choose a fsDeploy command:"}).then((selection:vscode.QuickPickItem) => {
             if(!selection) 
@@ -57,13 +62,12 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     let onOpen = vscode.window.onDidChangeActiveTextEditor((e: vscode.TextEditor) => {
-        if (!statusBarItem) {
-	    	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    		statusBarItem.command = 'fsdeploy.menuFunctions';
-            statusBarItem.show();
-	    }
+        updateStatusBar();
+    });
+
+    let updateStatusBar = function() {
         let workspaceNode = getWorkspaceDeployNodes();
-        let fileNode = getFileDeployNodes(vscode.window.activeTextEditor.document.fileName);
+        let fileNode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
 
         if(workspaceNode.length > 0 && fileNode.length > 0) {
             statusBarItem.text = 'Deploy: $(check)';
@@ -76,14 +80,22 @@ export function activate(context: vscode.ExtensionContext) {
             statusBarItem.tooltip = "Workspace has a deployment target but file isn't in scope";
         } else {
             statusBarItem.text = 'Deploy: $(stop)';
-            statusBarItem.tooltip = "Workspace doesn't have a deployment target";
+            statusBarItem.tooltip = "Workspace and current file don't have any deployment targets";
         }
-    });
+    }
 
     context.subscriptions.push(onSave);
     context.subscriptions.push(onOpen);
-    context.subscriptions.push(cmdDeployFile);
-    context.subscriptions.push(cmdDeployWorkspace);
+    //context.subscriptions.push(cmdDeployFile);
+    //context.subscriptions.push(cmdDeployWorkspace);
+    //context.subscriptions.push(cmdMenuOptions);
+
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+    statusBarItem.command = 'fsdeploy.menuFunctions';
+    statusBarItem.show();
+
+    updateStatusBar();
+    console.log("fsdeploy activated.");
 }
 
 function getFileDeployNodes(path: string) : fsConfigNode[] {
@@ -130,7 +142,7 @@ function deploy(filePath: string) : void {
 
             mkdirs(target);
 
-            fsext.copySync(filePath, `${target}\\${fileName}`);
+            fs.copySync(filePath, `${target}\\${fileName}`);
         });
 
         statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
@@ -161,7 +173,7 @@ function deployWorkspace() : void {
 
                         mkdirs(target);
 
-                        fsext.copySync(file.fsPath, `${target}\\${fileName}`);
+                        fs.copySync(file.fsPath, `${target}\\${fileName}`);
                     }
                     vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${node.target}.`);
                     statusBarItem.text = `${origiStatus} finished deploying`;

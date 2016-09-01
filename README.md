@@ -93,6 +93,11 @@ none
 
 ## Changelog
 
+### 0.1.0
+- Fixing NPE when accessing the status bar
+- Fixing multiple issues to bring the extension to a more final stage
+- Fixing dependencies
+
 ### 0.0.6
 - Fixing issues in workspace deployment
 
