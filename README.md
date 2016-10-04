@@ -95,6 +95,9 @@ none
 
 ## Changelog
 
+### 0.1.2
+- Fixing path issues on non windows environments
+
 ### 0.1.1
 - Adding configuration to stop auto-deploy on save
 
