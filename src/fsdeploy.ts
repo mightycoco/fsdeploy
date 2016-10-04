@@ -6,6 +6,7 @@
 // marketplace: https://marketplace.visualstudio.com/items?itemName=mightycoco.fsdeploy
 import * as vscode from 'vscode';
 import * as fs from 'fs-extra';
+import * as fspath from 'path';
 
 let statusBarItem: vscode.StatusBarItem = null;
 
@@ -132,8 +133,8 @@ export function deactivate() {
 
 function deploy(filePath: string) : void {
     let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
-    let path: string = filePath.substr(0, filePath.lastIndexOf("\\"));
-    let fileName: string = filePath.substr(filePath.lastIndexOf("\\") + 1);
+    let path: string = filePath.substr(0, filePath.lastIndexOf(fspath.sep));
+    let fileName: string = filePath.substr(filePath.lastIndexOf(fspath.sep) + 1);
 
     if(nodes.length > 0) {
         let origiStatus = statusBarItem.text;
@@ -141,11 +142,11 @@ function deploy(filePath: string) : void {
 
         nodes.forEach((node: fsConfigNode) => {
             let subpath: string = path.substr(node.source.length);
-            let target: string = `${node.target}\\${subpath}`;
+            let target: string = `${node.target}${fspath.sep}${subpath}`;
 
             mkdirs(target);
 
-            fs.copySync(filePath, `${target}\\${fileName}`);
+            fs.copySync(filePath, `${target}${fspath.sep}${fileName}`);
         });
 
         statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
@@ -169,14 +170,14 @@ function deployWorkspace() : void {
             vscode.workspace.findFiles(node.include, node.exclude).then((files: vscode.Uri[]) => {
                 files.forEach((file) => {
                     if(file.scheme == "file") {
-                        let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf("\\"));
-                        let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf("\\") + 1);
+                        let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(fspath.sep));
+                        let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(fspath.sep) + 1);
                         let subpath: string = path.substr(node.source.length);
-                        let target: string = `${node.target}\\${subpath}`;
+                        let target: string = `${node.target}${fspath.sep}${subpath}`;
 
                         mkdirs(target);
 
-                        fs.copySync(file.fsPath, `${target}\\${fileName}`);
+                        fs.copySync(file.fsPath, `${target}${fspath.sep}${fileName}`);
                     }
                     vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${node.target}.`);
                     statusBarItem.text = `${origiStatus} finished deploying`;
@@ -192,15 +193,15 @@ function deployWorkspace() : void {
 }
 
 function mkdirs(path: string) : void {
-    path = path.replace(/\\/g, '/');
-    let dirs: string[] = path.split('/');
-    let prevDir: string = dirs.splice(0,1)+"/";
+    path = path.replace(/${fspath.sep}/g, fspath.sep);
+    let dirs: string[] = path.split(fspath.sep);
+    let prevDir: string = dirs.splice(0,1)+fspath.sep;
 
     while(dirs.length > 0) {
         let curDir: string = prevDir + dirs.splice(0,1);
         if (! fs.existsSync(curDir) ) {
             fs.mkdirSync(curDir);
         }
-        prevDir = curDir + '/';
+        prevDir = curDir + fspath.sep;
     }
 }
