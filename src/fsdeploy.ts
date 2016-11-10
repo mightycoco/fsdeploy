@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     let updateStatusBar = function() {
         let workspaceNode = getWorkspaceDeployNodes();
-        let fileNode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
+        let fileNode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];	
 
         if(workspaceNode.length > 0 && fileNode.length > 0) {
             statusBarItem.text = 'Deploy: $(check)';
@@ -172,11 +172,10 @@ function deployWorkspace() : void {
                     if(file.scheme == "file") {
                         let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(fspath.sep));
                         let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(fspath.sep) + 1);
-                        let subpath: string = path.substr(node.source.length);
+                        let subpath: string = path.substr(node.source.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
                         let target: string = `${node.target}${fspath.sep}${subpath}`;
 
                         mkdirs(target);
-
                         fs.copySync(file.fsPath, `${target}${fspath.sep}${fileName}`);
                     }
                     vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${node.target}.`);

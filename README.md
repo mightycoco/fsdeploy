@@ -95,6 +95,10 @@ none
 
 ## Changelog
 
+### 0.1.3
+- Adding configuration to package.json
+- Don't remove leading/trailing slashes in pathes when building the effective subpaath
+
 ### 0.1.2
 - Fixing path issues on non windows environments
 
