@@ -2,7 +2,7 @@
   "name": "fsdeploy",
   "displayName": "fsdeploy",
   "description": "Deploy workspace files after saving to a specified destination",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "mightycoco",
   "engines": {
     "vscode": "^1.0.0"
@@ -44,7 +44,23 @@
         "title": "Show fsdeploy functions",
         "category": "fsdeploy"
       }
-    ]
+    ],
+	"configuration": {
+		"type":"object",
+		"title":"fsdeploy Configuration",
+		"properties": {
+			"fsdeploy.nodes": {
+				"type": "array",
+				"default": [],
+				"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
+			},
+			"fsdeploy.deployOnSave": {
+				"type": "boolean",
+				"default": true,
+				"description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
+			}
+		}
+	}
   },
   "icon": "logo.svg",
   "scripts": {
@@ -58,21 +74,5 @@
   "devDependencies": {
     "typescript": "^1.8.5",
     "vscode": "^0.11.0"
-  },
-  "configuration": {
-	  "type":"object",
-	  "title":"fsdeploy Configuration",
-	  "properties": {
-		  "fsdeploy.nodes": {
-			  "type": "array",
-			  "default": [],
-			  "description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
-		  },
-		  "fsdeploy.deployOnSave": {
-			  "type": "boolean",
-			  "default": true,
-			  "description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
-		  }
-	  }
   }
 }
