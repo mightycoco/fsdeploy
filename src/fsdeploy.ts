@@ -107,7 +107,8 @@ function getFileDeployNodes(path: string) : fsConfigNode[] {
     let fsnodes: fsConfigNode[] = [];
 
     nodes.forEach((node: fsConfigNode) => {
-        if(path.toLowerCase().startsWith(node.source.toLowerCase())) {
+        const sourcePath = getAbsolutePath(node.source);
+        if(path.toLowerCase().startsWith(sourcePath.toLowerCase())) {
             fsnodes.push(node);
         }
     });
@@ -119,7 +120,8 @@ function getWorkspaceDeployNodes() : fsConfigNode[] {
     let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
     let fsnodes: fsConfigNode[] = [];
     nodes.forEach((node: fsConfigNode) => {
-        if(node.source.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
+        const sourcePath = getAbsolutePath(node.source);
+        if(sourcePath.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
             fsnodes.push(node); 
         }
     });
@@ -141,8 +143,10 @@ function deploy(filePath: string) : void {
         statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
 
         nodes.forEach((node: fsConfigNode) => {
-            let subpath: string = path.substr(node.source.length);
-            let target: string = `${node.target}${fspath.sep}${subpath}`;
+            const sourcePath = getAbsolutePath(node.source);
+            let subpath: string = path.substr(sourcePath.length);
+            const targetPath = getAbsolutePath(node.target);
+            let target: string = `${targetPath}${fspath.sep}${subpath}`;
 
             mkdirs(target);
 
@@ -165,20 +169,22 @@ function deployWorkspace() : void {
 
     if(fsnodes.length > 0) {
         fsnodes.forEach(function(node) {
-            statusBarItem.text = `${origiStatus} deploying to '${node.target}'`;
+            const targetPath = getAbsolutePath(node.target);
+            statusBarItem.text = `${origiStatus} deploying to '${targetPath}'`;
             // find files using a glob include/exclude and deploy accordingly
             vscode.workspace.findFiles(node.include, node.exclude).then((files: vscode.Uri[]) => {
                 files.forEach((file) => {
                     if(file.scheme == "file") {
                         let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(fspath.sep));
                         let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(fspath.sep) + 1);
-                        let subpath: string = path.substr(node.source.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
-                        let target: string = `${node.target}${fspath.sep}${subpath}`;
+                        const sourcePath = getAbsolutePath(node.source);
+                        let subpath: string = path.substr(sourcePath.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
+                        let target: string = `${targetPath}${fspath.sep}${subpath}`;
 
                         mkdirs(target);
                         fs.copySync(file.fsPath, `${target}${fspath.sep}${fileName}`);
                     }
-                    vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${node.target}.`);
+                    vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
                     statusBarItem.text = `${origiStatus} finished deploying`;
                     setTimeout(() => {
                         statusBarItem.text = origiStatus;
@@ -189,6 +195,10 @@ function deployWorkspace() : void {
     } else {
         vscode.window.showErrorMessage(`Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`);
     }
+}
+
+function getAbsolutePath(relativePath: string): string {
+    return fspath.resolve(vscode.workspace.rootPath, relativePath);
 }
 
 function mkdirs(path: string) : void {
