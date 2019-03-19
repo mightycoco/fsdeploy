@@ -5,9 +5,9 @@
 // use https://octicons.github.com/ glyphs for window icons
 // marketplace: https://marketplace.visualstudio.com/items?itemName=mightycoco.fsdeploy
 import * as vscode from 'vscode';
-import * as fse from 'fs-extra';
 import * as fs from 'fs';
-import * as fspath from 'path';
+import * as fse from 'fs-extra';
+import * as Path from 'path';
 
 var statusBarItem: vscode.StatusBarItem;
 var channel = vscode.window.createOutputChannel('fsdeploy Log');
@@ -106,7 +106,8 @@ function getFileDeployNodes(path: string) : fsConfigNode[] {
     let fsnodes: fsConfigNode[] = [];
 
     nodes.forEach((node: fsConfigNode) => {
-        if(path.toLowerCase().startsWith(node.source.toLowerCase())) {
+        const sourcePath = getAbsolutePath(node.source);
+        if(path.toLowerCase().startsWith(sourcePath.toLowerCase())) {
             fsnodes.push(node);
         }
     });
@@ -118,11 +119,10 @@ function getWorkspaceDeployNodes() : fsConfigNode[] {
     let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
     let fsnodes: fsConfigNode[] = [];
     nodes.forEach((node: fsConfigNode) => {
-		if(vscode.workspace.rootPath) {
-			if(node.source.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
-				fsnodes.push(node); 
-			}
-		}
+        const sourcePath = getAbsolutePath(node.source);
+        if(sourcePath.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
+            fsnodes.push(node); 
+        }
     });
 
     return fsnodes;
@@ -136,25 +136,27 @@ function deploy(filePath: string) : void {
 	log(`Deploy file ${filePath}`);
 
     let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
-    let path: string = filePath.substr(0, filePath.lastIndexOf(fspath.sep));
-    let fileName: string = filePath.substr(filePath.lastIndexOf(fspath.sep) + 1);
+    let path: string = filePath.substr(0, filePath.lastIndexOf(Path.sep));
+    let fileName: string = filePath.substr(filePath.lastIndexOf(Path.sep) + 1);
 
     if(nodes.length > 0) {
         let origiStatus = statusBarItem.text;
         statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
 
         nodes.forEach((node: fsConfigNode) => {
-            let subpath: string = path.substr(node.source.length);
-            let target: string = `${node.target}${subpath}`;
+            const sourcePath = getAbsolutePath(node.source);
+            let subpath: string = path.substr(sourcePath.length);
+            const targetPath = getAbsolutePath(node.target);
+            let target: string = `${targetPath}${Path.sep}${subpath}`;
 
             mkdirs(target);
 
 			try {
-				fs.writeFileSync(`${target}${fspath.sep}${fileName}`, fs.readFileSync(filePath));
-				//fse.copySync(filePath, `${target}${fspath.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
-				log(`  -> done on ${target}${fspath.sep}${fileName}`);
+				fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(filePath));
+				//fse.copySync(filePath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
+				log(`  -> done on ${target}${Path.sep}${fileName}`);
 			} catch(ex) {
-				log(`  -> ERROR ${ex} on ${target}${fspath.sep}${fileName}`);
+				log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
 			}
         });
 
@@ -174,29 +176,30 @@ function deployWorkspace() : void {
 
     if(fsnodes.length > 0) {
         fsnodes.forEach(function(node) {
-			log(`Deploy workspace ${node.source}`);
-            statusBarItem.text = `${origiStatus} deploying to '${node.target}'`;
+            const targetPath = getAbsolutePath(node.target);
+            statusBarItem.text = `${origiStatus} deploying to '${targetPath}'`;
             // find files using a glob include/exclude and deploy accordingly
             vscode.workspace.findFiles(node.include, node.exclude).then((files: vscode.Uri[]) => {
                 files.forEach((file) => {
                     if(file.scheme == "file") {
 						log(`Deploy file ${file.fsPath}`);
-                        let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(fspath.sep));
-                        let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(fspath.sep) + 1);
-                        let subpath: string = path.substr(node.source.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
-                        let target: string = `${node.target}${subpath}`;
+                        let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(Path.sep));
+                        let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(Path.sep) + 1);
+                        const sourcePath = getAbsolutePath(node.source);
+                        let subpath: string = path.substr(sourcePath.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
+                        let target: string = `${targetPath}${Path.sep}${subpath}`;
 
                         mkdirs(target);
 						
 						try {
-							fs.writeFileSync(`${target}${fspath.sep}${fileName}`, fs.readFileSync(file.fsPath));
-							//fse.copySync(file.fsPath, `${target}${fspath.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
-							log(`  -> done on ${target}${fspath.sep}${fileName}`);
+							fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(file.fsPath));
+							//fse.copySync(file.fsPath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
+							log(`  -> done on ${target}${Path.sep}${fileName}`);
 						} catch(ex) {
-							log(`  -> ERROR ${ex} on ${target}${fspath.sep}${fileName}`);
+							log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
 						}
                     }
-                    vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${node.target}.`);
+                    vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
                     statusBarItem.text = `${origiStatus} finished deploying`;
                     setTimeout(() => {
                         statusBarItem.text = origiStatus;
@@ -215,16 +218,20 @@ function log(msg: string) {
 	console.log(msg);
 }
 
+function getAbsolutePath(relativePath: string): string {
+    return Path.resolve(vscode.workspace.rootPath, relativePath);
+}
+
 function mkdirs(path: string) : void {
-    path = path.replace(/${fspath.sep}/g, fspath.sep);
-    let dirs: string[] = path.split(fspath.sep);
-    let prevDir: string = dirs.splice(0,1)+fspath.sep;
+    path = path.replace(/${fspath.sep}/g, Path.sep);
+    let dirs: string[] = path.split(Path.sep);
+    let prevDir: string = dirs.splice(0,1)+Path.sep;
 
     while(dirs.length > 0) {
         let curDir: string = prevDir + dirs.splice(0,1);
         if (! fse.existsSync(curDir) ) {
             fse.mkdirSync(curDir);
         }
-        prevDir = curDir + fspath.sep;
+        prevDir = curDir + Path.sep;
     }
 }

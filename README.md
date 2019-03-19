@@ -95,6 +95,10 @@ none
 
 ## Changelog
 
+### 0.1.6
+- minor clean ups
+- added relative path support from the workspace root. (greggbjensen)
+
 ### 0.1.5
 - Updating builds and dependencies
 - Moving from sync to async copy

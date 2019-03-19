@@ -9,5 +9,6 @@
 		"out/": true
 	},
     "editor.insertSpaces": false,
-    "typescript.tsdk": "./node_modules/typescript/lib" // we want to use the TS server from our node_modules folder to control its version
+	"typescript.tsdk": "./node_modules/typescript/lib", // we want to use the TS server from our node_modules folder to control its version
+	"typescript.tsc.autoDetect": "off"
 }

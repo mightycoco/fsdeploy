@@ -1,0 +1,14 @@
+{
+    "defaultSeverity": "warning",
+    "rules": {
+      "indent": [
+        true,
+        "spaces",
+        4
+      ],
+      "quotemark": [
+        true,
+        "single"
+      ]
+    }
+  }
