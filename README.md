@@ -95,6 +95,10 @@ none
 
 ## Changelog
 
+### 0.1.5
+- Updating builds and dependencies
+- Moving from sync to async copy
+
 ### 0.1.3
 - Adding configuration to package.json
 - Don't remove leading/trailing slashes in pathes when building the effective subpaath
