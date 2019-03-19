@@ -19,9 +19,9 @@
     "copy"
   ],
   "repository": {
-		"type": "git",
-		"url": "https://github.com/mightycoco/fsdeploy.git"
-	},
+    "type": "git",
+    "url": "https://github.com/mightycoco/fsdeploy.git"
+  },
   "galleryBanner": {
     "color": "#9ebeff",
     "theme": "dark"
@@ -45,22 +45,22 @@
         "category": "fsdeploy"
       }
     ],
-	"configuration": {
-		"type":"object",
-		"title":"fsdeploy Configuration",
-		"properties": {
-			"fsdeploy.nodes": {
-				"type": "array",
-				"default": [],
-				"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
-			},
-			"fsdeploy.deployOnSave": {
-				"type": "boolean",
-				"default": true,
-				"description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
-			}
-		}
-	}
+    "configuration": {
+      "type": "object",
+      "title": "fsdeploy Configuration",
+      "properties": {
+        "fsdeploy.nodes": {
+          "type": "array",
+          "default": [],
+          "description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
+        },
+        "fsdeploy.deployOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
+        }
+      }
+    }
   },
   "icon": "logo.svg",
   "scripts": {
