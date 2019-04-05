@@ -2,7 +2,7 @@
 	"name": "fsdeploy",
 	"displayName": "fsdeploy",
 	"description": "Deploy workspace files after saving to a specified destination",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"publisher": "mightycoco",
 	"engines": {
 		"vscode": "^1.32.0"
