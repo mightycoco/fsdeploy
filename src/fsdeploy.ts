@@ -196,7 +196,7 @@ function deployWorkspace() : void {
 							//fse.copySync(file.fsPath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
 							log(`  -> done on ${target}${Path.sep}${fileName}`);
 						} catch(ex) {
-							log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+							log(`  -> !ERROR ${ex} on ${target}${Path.sep}${fileName}`);
 						}
                     }
                     vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
@@ -219,7 +219,7 @@ function log(msg: string) {
 }
 
 function getAbsolutePath(relativePath: string): string {
-    return Path.resolve(vscode.workspace.rootPath, relativePath);
+    return Path.resolve(vscode.workspace.rootPath, relativePath).replace(/[\\/]$/g, "");
 }
 
 function mkdirs(path: string) : void {
