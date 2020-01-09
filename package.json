@@ -57,7 +57,12 @@
 				"fsdeploy.deployOnSave": {
 					"type": "boolean",
 					"default": true,
-					"description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
+					"description": "A boolean flag indicating if a file should get immediately deployed when saving"
+				},
+				"fsdeploy.deployWorkspaceOnSave": {
+					"type": "boolean",
+					"default": false,
+					"description": "A boolean flag indicating if the complete workspace should get immediately deployed when saving"
 				}
 			}
 		}

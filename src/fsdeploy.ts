@@ -59,7 +59,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     let onSave = vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
         let deployOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployOnSave", true);
-        if(deployOnSave) {
+        let deployWorkspaceOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployWorkspaceOnSave", true);
+
+        if (deployWorkspaceOnSave) {
+            deployWorkspace();
+        } else if (deployOnSave) {
             deploy(e.fileName);
         }
     });

@@ -13,7 +13,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
 > This extension contributes the following settings
 
 * `fsdeploy.nodes`: array of objects containing a source/target set.
-* `fsdeploy.deployOnSave`: boolean flag indicating if a file should get immeadiately deployed when saving. (Defaults to true.)
+* `fsdeploy.deployOnSave`: boolean flag indicating if a file should get immediately deployed when saving. 
+* `fsdeploy.deployWorkspaceOnSave`: boolean flag indicating if the complete workspace should get immediately deployed when saving. (Defaults to false.)
 
 > example:
 
@@ -26,7 +27,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
                   "exclude":"**/min/*.*"
               }
           ],
-          "fsdeploy.deployOnSave": true
+          "fsdeploy.deployOnSave": true,
+          "fsdeploy.deployWorkspaceOnSave": false
       }
 
 - You can have multiple targets for the same source. 
