@@ -98,6 +98,10 @@ none
 ## Changelog
 
 ### 0.1.6
+- minor typo fix
+- added deployWorkspaceOnSave functionality. (saschamander)
+
+### 0.1.6
 - minor clean ups
 - added relative path support from the workspace root. (greggbjensen)
 
