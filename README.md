@@ -24,7 +24,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
                   "source":"/usr/code/project/",
                   "target":"/var/www/html/foo",
                   "include":"**/*.*",
-                  "exclude":"**/min/*.*"
+                  "exclude":"**/min/*.*",
+                  "deleteTargetOnDeploy": true
               }
           ],
           "fsdeploy.deployOnSave": true,
@@ -32,7 +33,7 @@ For example if there is a file in your workspace under /usr/code/project/test.js
       }
 
 - You can have multiple targets for the same source. 
-  Just add multiple nodes then with different targetts which copy from the same source.
+  Just add multiple nodes then with different targets which copy from the same source.
 - Adding include/exclude rules in the form of glob patterns
 
 
@@ -88,7 +89,8 @@ You would need to create a glob excluding src, build and /tests/:
             "source":"/opt/usr/projects/foo",
             "target":"/var/www/bar",
             "exclude":"**/tests/**",
-            "include": "{templates,js}/**/*.*"
+            "include": "{templates,js}/**/*.*",
+            "deleteTargetOnDeploy": true
         }
     }
 
@@ -96,6 +98,9 @@ You would need to create a glob excluding src, build and /tests/:
 none
 
 ## Changelog
+
+### 0.1.8
+- added Remove target-folder before deploy workspace (saschamander)
 
 ### 0.1.7
 - minor typo fix

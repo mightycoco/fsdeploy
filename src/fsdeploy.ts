@@ -181,6 +181,17 @@ function deployWorkspace() : void {
     if(fsnodes.length > 0) {
         fsnodes.forEach(function(node) {
             const targetPath = getAbsolutePath(node.target);
+
+            // remove deploy dir
+            if(node.deleteTargetOnDeploy){
+                  try {
+                    log(`Delete node target: ${targetPath}`);
+                    fse.removeSync(targetPath);    
+                  } catch (error) {
+                    log(`Error on deleting node target: ${targetPath}`);
+                  }                 
+            }
+
             statusBarItem.text = `${origiStatus} deploying to '${targetPath}'`;
             // find files using a glob include/exclude and deploy accordingly
             vscode.workspace.findFiles(node.include, node.exclude).then((files: vscode.Uri[]) => {

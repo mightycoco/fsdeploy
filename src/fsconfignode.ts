@@ -5,4 +5,5 @@ interface fsConfigNode {
     target: string;
     exclude: string;
     include: string;
+    deleteTargetOnDeploy: boolean;
 }

@@ -52,7 +52,7 @@
 				"fsdeploy.nodes": {
 					"type": "array",
 					"default": [],
-					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
+					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob, deleteTargetOnDeploy: boolean}"
 				},
 				"fsdeploy.deployOnSave": {
 					"type": "boolean",
