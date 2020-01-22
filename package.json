@@ -73,7 +73,7 @@
 								"description": "glob pattern of excludes"
 							},
 							"scp": {
-								"type": "array",
+								"type": "object",
 								"title": "Configuration for SCP if target is a linux system",
 								"properties": {
 									"enabled": {
