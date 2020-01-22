@@ -52,6 +52,7 @@
 				"fsdeploy.nodes": {
 					"type": "array",
 					"default": [],
+					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob, deleteTargetOnDeploy: boolean}"
 					"items": {
 						"type": "object",
 						"title": "deploy binding",
@@ -72,6 +73,10 @@
 								"type": "string",
 								"description": "glob pattern of excludes"
 							},
+              "deleteTargetOnDeploy": {
+                "type":"boolean",
+                "description": "Remove the target folder on deployment"
+              },
 							"scp": {
 								"type": "object",
 								"title": "Configuration for SCP if target is a linux system",
@@ -100,12 +105,16 @@
 							}
 						}
 					},
-					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
 				},
 				"fsdeploy.deployOnSave": {
 					"type": "boolean",
 					"default": true,
-					"description": "A boolean flag indicating if a file should get immeadiately deployed when saving"
+					"description": "A boolean flag indicating if a file should get immediately deployed when saving"
+				},
+				"fsdeploy.deployWorkspaceOnSave": {
+					"type": "boolean",
+					"default": false,
+					"description": "A boolean flag indicating if the complete workspace should get immediately deployed when saving"
 				}
 			}
 		}
