@@ -13,7 +13,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
 > This extension contributes the following settings
 
 * `fsdeploy.nodes`: array of objects containing a source/target set.
-* `fsdeploy.deployOnSave`: boolean flag indicating if a file should get immeadiately deployed when saving. (Defaults to true.)
+* `fsdeploy.deployOnSave`: boolean flag indicating if a file should get immediately deployed when saving. 
+* `fsdeploy.deployWorkspaceOnSave`: boolean flag indicating if the complete workspace should get immediately deployed when saving. (Defaults to false.)
 
 > example:
 
@@ -24,14 +25,16 @@ For example if there is a file in your workspace under /usr/code/project/test.js
                   "target":"/var/www/html/foo",
                   "include":"**/*.*",
                   "exclude":"**/min/*.*",
-				  "scp": {...}
+                  "deleteTargetOnDeploy": true,
+        				  "scp": {...}
               }
           ],
-          "fsdeploy.deployOnSave": true
+          "fsdeploy.deployOnSave": true,
+          "fsdeploy.deployWorkspaceOnSave": false
       }
 
 - You can have multiple targets for the same source. 
-  Just add multiple nodes then with different targetts which copy from the same source.
+  Just add multiple nodes then with different targets which copy from the same source.
 - Adding include/exclude rules in the form of glob patterns
 
 
@@ -87,7 +90,8 @@ You would need to create a glob excluding src, build and /tests/:
             "source":"/opt/usr/projects/foo",
             "target":"/var/www/bar",
             "exclude":"**/tests/**",
-            "include": "{templates,js}/**/*.*"
+            "include": "{templates,js}/**/*.*",
+            "deleteTargetOnDeploy": true
         }
     }
 
@@ -104,7 +108,12 @@ scp doesn't support certificate authentication. It's recommended to have a user 
 
 ## Changelog
 
-### 0.1.8
+### 0.1.10
+- added Remove target-folder before deploy workspace (saschamander)
+- minor typo fix
+- added deployWorkspaceOnSave functionality. (saschamander)
+
+### 0.1.9
 - add scp to upload to unix hosts
 
 ### 0.1.7

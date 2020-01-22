@@ -4,12 +4,13 @@ interface fsConfigNode {
     source: string;
     target: string;
     exclude: string;
-	include: string;
-	scp: {
-		enabled: boolean,
-		host: string,
-		port: number,
-		username: string,
-		password: string
-	}
+    include: string;
+    deleteTargetOnDeploy: boolean;
+    scp: {
+      enabled: boolean,
+      host: string,
+      port: number,
+      username: string,
+      password: string
+    }
 }
