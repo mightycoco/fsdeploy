@@ -2,7 +2,7 @@
 	"name": "fsdeploy",
 	"displayName": "fsdeploy",
 	"description": "Deploy workspace files after saving to a specified destination",
-	"version": "0.1.8",
+	"version": "0.1.10",
 	"publisher": "mightycoco",
 	"engines": {
 		"vscode": "^1.32.0"
@@ -52,7 +52,7 @@
 				"fsdeploy.nodes": {
 					"type": "array",
 					"default": [],
-					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob, deleteTargetOnDeploy: boolean}"
+					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob, deleteTargetOnDeploy: boolean}",
 					"items": {
 						"type": "object",
 						"title": "deploy binding",
@@ -73,10 +73,10 @@
 								"type": "string",
 								"description": "glob pattern of excludes"
 							},
-              "deleteTargetOnDeploy": {
-                "type":"boolean",
-                "description": "Remove the target folder on deployment"
-              },
+							"deleteTargetOnDeploy": {
+								"type":"boolean",
+								"description": "Remove the target folder on deployment"
+							},
 							"scp": {
 								"type": "object",
 								"title": "Configuration for SCP if target is a linux system",
@@ -104,7 +104,7 @@
 								}
 							}
 						}
-					},
+					}
 				},
 				"fsdeploy.deployOnSave": {
 					"type": "boolean",

@@ -31,5 +31,6 @@
 			}
 		}
 	],
-	"fsdeploy.deployOnSave": true
+	"fsdeploy.deployOnSave": true,
+	"fsdeploy.deployWorkspaceOnSave": false
 }
