@@ -23,7 +23,8 @@ For example if there is a file in your workspace under /usr/code/project/test.js
                   "source":"/usr/code/project/",
                   "target":"/var/www/html/foo",
                   "include":"**/*.*",
-                  "exclude":"**/min/*.*"
+                  "exclude":"**/min/*.*",
+				  "scp": {...}
               }
           ],
           "fsdeploy.deployOnSave": true
@@ -90,10 +91,24 @@ You would need to create a glob excluding src, build and /tests/:
         }
     }
 
+if the target system in unix, you can use scp to upload to the target. In this case the configuration for a node needs to be extended with the target host information and username/password:
+scp {
+	host: "hostname",
+	port: 22,
+	username: "cpuser",
+	password: "cppassword"
+}
+
 ## Known Issues
-none
+scp doesn't support certificate authentication. It's recommended to have a user which has only write permissions to the desired remote folder used in the deploy binding. No read is required.
 
 ## Changelog
+
+### 0.1.8
+- add scp to upload to unix hosts
+
+### 0.1.7
+- minor bug fixes
 
 ### 0.1.6
 - minor clean ups

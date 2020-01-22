@@ -2,7 +2,7 @@
 	"name": "fsdeploy",
 	"displayName": "fsdeploy",
 	"description": "Deploy workspace files after saving to a specified destination",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"publisher": "mightycoco",
 	"engines": {
 		"vscode": "^1.32.0"
@@ -52,6 +52,54 @@
 				"fsdeploy.nodes": {
 					"type": "array",
 					"default": [],
+					"items": {
+						"type": "object",
+						"title": "deploy binding",
+						"properties": {
+							"source": {
+								"type": "string",
+								"description": "The path to the source root folder. Everything underneath can be deployed - see include/exclude for exceptions"
+							},
+							"target": {
+								"type": "string",
+								"description": "The path to the target root folder."
+							},
+							"include": {
+								"type": "string",
+								"description": "glob pattern of includes"
+							},
+							"exclude": {
+								"type": "string",
+								"description": "glob pattern of excludes"
+							},
+							"scp": {
+								"type": "array",
+								"title": "Configuration for SCP if target is a linux system",
+								"properties": {
+									"enabled": {
+										"type": "boolean",
+										"description": "enables scp for this deploy binding"
+									},
+									"host": {
+										"type": "string",
+										"description": "Hostname of the remote system"
+									},
+									"port": {
+										"type": "number",
+										"description": "Port number of the host. Usually 22"
+									},
+									"username": {
+										"type": "string",
+										"description": "Username for remote authentication"
+									},
+									"password": {
+										"type": "string",
+										"description": "Password for the remote authentication"
+									}
+								}
+							}
+						}
+					},
 					"description": "An array of objects containing a source/target set. Each array item is an object: {source: string, target: string, include: glob, exclude: glob}"
 				},
 				"fsdeploy.deployOnSave": {
@@ -70,11 +118,12 @@
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"dependencies": {
-		"@types/fs-extra": "^5.0.5",
-		"fs-extra": "^7.0.1"
+		"@types/fs-extra": "^5.1.0",
+		"fs-extra": "^7.0.1",
+		"ssh2-sftp-client": "^5.0.1"
 	},
 	"devDependencies": {
-		"typescript": "^3.1.6",
-		"vscode": "^1.1.28"
+		"typescript": "^3.7.5",
+		"vscode": "^1.1.36"
 	}
 }

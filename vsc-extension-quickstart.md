@@ -34,6 +34,13 @@ We pass the function containing the implementation of the command as the second 
 	
 ## Publishing
 https://code.visualstudio.com/api/working-with-extensions/publishing-extension
-npm install -g vsce
-vsce packlage
-vsce publish
+> npm install -g vsce
+> vsce packlage
+> vsce publish
+
+When receiving a 401, re-logon
+> vsce login mightycoco
+
+configuration of access tokens
+https://dev.azure.com/pointcode3
+Access-Token: zjgdwkpmsdl75zbkya75ffqibxgwocp3iaxoqg64rqx2gcfrgz7a
