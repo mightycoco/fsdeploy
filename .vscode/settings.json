@@ -1,9 +1,13 @@
 // Place your settings in this file to overwrite default and user settings.
 {
     "files.exclude": {
-        "out": true, // set this to true to hide the "out" folder with the compiled JS files
-        "typings": false
-    },
+		"out": true,
+		"typings": false,
+		"**/.classpath": true,
+		"**/.project": true,
+		"**/.settings": true,
+		"**/.factorypath": true
+	},
     "search.exclude": {
 		"**/node_modules": true,
 		"out/": true
@@ -11,4 +15,21 @@
     "editor.insertSpaces": false,
 	"typescript.tsdk": "./node_modules/typescript/lib", // we want to use the TS server from our node_modules folder to control its version
 	"typescript.tsc.autoDetect": "off",
+	"fsdeploy.nodes":
+	[
+		{
+			"source":"C:\\data\\p4_clients\\ac_main\\ac\\main\\pkg\\AS_BIZADMIN_CLIENT",
+			"target":"/tmp/fsdeploy",
+			"include":"*",
+			"exclude":"",
+			"scp": {
+				"enabled": true,
+				"host": "ascpen-1.ac.dc",
+				"port": 22,
+				"username": "root",
+				"password": "4test!XX"
+			}
+		}
+	],
+	"fsdeploy.deployOnSave": true
 }

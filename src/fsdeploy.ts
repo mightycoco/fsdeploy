@@ -105,70 +105,101 @@ export function activate(context: vscode.ExtensionContext) {
     log("  -> fsdeploy activated.");
 }
 
-function getFileDeployNodes(path: string) : fsConfigNode[] {
-    let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
-    let fsnodes: fsConfigNode[] = [];
+function getFileDeployNodes(path: string): fsConfigNode[] {
+	let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
+	let fsnodes: fsConfigNode[] = [];
 
-    nodes.forEach((node: fsConfigNode) => {
-        const sourcePath = getAbsolutePath(node.source);
-        if(path.toLowerCase().startsWith(sourcePath.toLowerCase())) {
-            fsnodes.push(node);
-        }
-    });
+	nodes.forEach((node: fsConfigNode) => {
+		const sourcePath = getAbsolutePath(node.source);
+		if (path.toLowerCase().startsWith(sourcePath.toLowerCase())) {
+			fsnodes.push(node);
+		}
+	});
 
-    return fsnodes;
+	return fsnodes;
 }
 
-function getWorkspaceDeployNodes() : fsConfigNode[] {
-    let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
-    let fsnodes: fsConfigNode[] = [];
-    nodes.forEach((node: fsConfigNode) => {
-        const sourcePath = getAbsolutePath(node.source);
-        if(sourcePath.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
-            fsnodes.push(node); 
-        }
-    });
+function getWorkspaceDeployNodes(): fsConfigNode[] {
+	let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
+	let fsnodes: fsConfigNode[] = [];
+	nodes.forEach((node: fsConfigNode) => {
+		const sourcePath = getAbsolutePath(node.source);
+		if (sourcePath.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
+			fsnodes.push(node);
+		}
+	});
 
-    return fsnodes;
+	return fsnodes;
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
 }
 
-function deploy(filePath: string) : void {
+function deploy(filePath: string): void {
 	log(`Deploy file ${filePath}`);
 
-    let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
-    let path: string = filePath.substr(0, filePath.lastIndexOf(Path.sep));
-    let fileName: string = filePath.substr(filePath.lastIndexOf(Path.sep) + 1);
+	let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
+	let path: string = filePath.substr(0, filePath.lastIndexOf(Path.sep));
+	let fileName: string = filePath.substr(filePath.lastIndexOf(Path.sep) + 1);
 
-    if(nodes.length > 0) {
-        let origiStatus = statusBarItem.text;
-        statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
+	if (nodes.length > 0) {
+		let origiStatus = statusBarItem.text;
+		statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
 
-        nodes.forEach((node: fsConfigNode) => {
-            const sourcePath = getAbsolutePath(node.source);
-            let subpath: string = path.substr(sourcePath.length);
-            const targetPath = getAbsolutePath(node.target);
-            let target: string = `${targetPath}${Path.sep}${subpath}`;
+		nodes.forEach((node: fsConfigNode) => {
+			const sourcePath = getAbsolutePath(node.source);
 
-            mkdirs(target);
+			if (node.scp && node.scp.enabled) {
+				let subpath: string = path.substr(sourcePath.length + 1).replace(/\\/g, '/');
+				const targetPath = node.target;
+				let target: string = `${targetPath}/${subpath}`;
 
-			try {
-				fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(filePath));
-				//fse.copySync(filePath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
-				log(`  -> done on ${target}${Path.sep}${fileName}`);
-			} catch(ex) {
-				log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+				var Client = require('ssh2-sftp-client');
+				var config = {
+					host: node.scp.host,
+					port: node.scp.port,
+					username: node.scp.username,
+					password: node.scp.password
+				};
+				var sftp = new Client();
+
+				let data = fs.createReadStream(filePath);
+
+				sftp.connect(config)
+					.then(() => {
+						sftp.mkdir(target, true);
+						var promise = sftp.put(data, `${target}/${fileName}`);
+						log(`  -> done on ${target}${Path.sep}${fileName}`);
+						return promise;
+					})
+					.then(() => {
+						return sftp.end();
+					})
+					.catch(err => {
+						log(`  -> ERROR ${err} on ${target}${Path.sep}${fileName}`);
+					});
+			} else {
+				let subpath: string = path.substr(sourcePath.length);
+				const targetPath = getAbsolutePath(node.target);
+				let target: string = `${targetPath}${Path.sep}${subpath}`;
+				mkdirs(target);
+
+				try {
+					fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(filePath));
+					//fse.copySync(filePath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
+					log(`  -> done on ${target}${Path.sep}${fileName}`);
+				} catch (ex) {
+					log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+				}
 			}
-        });
+		});
 
-        statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
-        setTimeout(() => {
-            statusBarItem.text = origiStatus;
-        }, 3000);
-    }
+		statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
+		setTimeout(() => {
+			statusBarItem.text = origiStatus;
+		}, 3000);
+	}
 };
 
 function deployWorkspace() : void {
@@ -198,34 +229,34 @@ function deployWorkspace() : void {
                 files.forEach((file) => {
                     if(file.scheme == "file") {
 						log(`Deploy file ${file.fsPath}`);
-                        let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(Path.sep));
-                        let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(Path.sep) + 1);
-                        const sourcePath = getAbsolutePath(node.source);
-                        let subpath: string = path.substr(sourcePath.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
-                        let target: string = `${targetPath}${Path.sep}${subpath}`;
+						let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(Path.sep));
+						let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(Path.sep) + 1);
+						const sourcePath = getAbsolutePath(node.source);
+						let subpath: string = path.substr(sourcePath.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
+						let target: string = `${targetPath}${Path.sep}${subpath}`;
 
-                        mkdirs(target);
-						
+						mkdirs(target);
+
 						try {
 							fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(file.fsPath));
 							//fse.copySync(file.fsPath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
 							log(`  -> done on ${target}${Path.sep}${fileName}`);
-						} catch(ex) {
-							log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+						} catch (ex) {
+							log(`  -> !ERROR ${ex} on ${target}${Path.sep}${fileName}`);
 						}
-                    }
-                    vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
-                    statusBarItem.text = `${origiStatus} finished deploying`;
-                    setTimeout(() => {
-                        statusBarItem.text = origiStatus;
-                    }, 3000);
-                });
-            });
-        });
-    } else {
-        vscode.window.showErrorMessage(`Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`);
+					}
+					vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
+					statusBarItem.text = `${origiStatus} finished deploying`;
+					setTimeout(() => {
+						statusBarItem.text = origiStatus;
+					}, 3000);
+				});
+			});
+		});
+	} else {
+		vscode.window.showErrorMessage(`Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`);
 		log(`ERROR: Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`)
-    }
+	}
 }
 
 function log(msg: string) {
@@ -234,19 +265,19 @@ function log(msg: string) {
 }
 
 function getAbsolutePath(relativePath: string): string {
-    return Path.resolve(vscode.workspace.rootPath, relativePath);
+	return Path.resolve(vscode.workspace.rootPath, relativePath).replace(/[\\/]$/g, "");
 }
 
-function mkdirs(path: string) : void {
-    path = path.replace(/${fspath.sep}/g, Path.sep);
-    let dirs: string[] = path.split(Path.sep);
-    let prevDir: string = dirs.splice(0,1)+Path.sep;
+function mkdirs(path: string): void {
+	path = path.replace(/${fspath.sep}/g, Path.sep);
+	let dirs: string[] = path.split(Path.sep);
+	let prevDir: string = dirs.splice(0, 1) + Path.sep;
 
-    while(dirs.length > 0) {
-        let curDir: string = prevDir + dirs.splice(0,1);
-        if (! fse.existsSync(curDir) ) {
-            fse.mkdirSync(curDir);
-        }
-        prevDir = curDir + Path.sep;
-    }
+	while (dirs.length > 0) {
+		let curDir: string = prevDir + dirs.splice(0, 1);
+		if (!fse.existsSync(curDir)) {
+			fse.mkdirSync(curDir);
+		}
+		prevDir = curDir + Path.sep;
+	}
 }
