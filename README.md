@@ -108,6 +108,10 @@ scp doesn't support certificate authentication. It's recommended to have a user 
 
 ## Changelog
 
+### 0.1.11
+- the single file deploy as well as the deployOnSave now considers the include/exclude globe pattern of the deploy binding (https://github.com/mightycoco/fsdeploy/issues/8#issue-484234843)
+- minor bug fixes and replacing deprecated API calls
+
 ### 0.1.10
 - added Remove target-folder before deploy workspace (saschamander)
 - minor typo fix

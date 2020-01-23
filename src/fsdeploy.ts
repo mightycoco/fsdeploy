@@ -8,6 +8,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
 import * as Path from 'path';
+import * as minimatch from 'minimatch';
+import * as sftpClient from 'ssh2-sftp-client';
 
 var statusBarItem: vscode.StatusBarItem;
 var channel = vscode.window.createOutputChannel('fsdeploy Log');
@@ -17,92 +19,92 @@ var channel = vscode.window.createOutputChannel('fsdeploy Log');
 export function activate(context: vscode.ExtensionContext) {
 
 	log("Initializing fsdeploy");
-    
-    let cmdMenuOptions = vscode.commands.registerCommand('fsdeploy.menuFunctions', () => {
-        let items:vscode.QuickPickItem[] = [];
-        let wsnode = getWorkspaceDeployNodes();
-        let fpnode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
 
-	    items.push({
-            label: "Deploy File", 
-            description: "Deploy the currently open file",
-            detail: fpnode.length > 0 ? `'${fpnode[0].source.toLowerCase()}' to '${fpnode[0].target.toLowerCase()}'` : null
-        });
-	    items.push({
-            label: "Deploy Workspace", 
-            description: "Deploy all files in the current workspace", 
-            detail: wsnode.length > 0 ? `'${wsnode[0].source.toLowerCase()}' to '${wsnode[0].target.toLowerCase()}'` : null 
-        });
+	let cmdMenuOptions = vscode.commands.registerCommand('fsdeploy.menuFunctions', () => {
+		let items: vscode.QuickPickItem[] = [];
+		let wsnode = getWorkspaceDeployNodes();
+		let fpnode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
+
+		items.push({
+			label: "Deploy File",
+			description: "Deploy the currently open file",
+			detail: fpnode.length > 0 ? `'${fpnode[0].source.toLowerCase()}' to '${fpnode[0].target.toLowerCase()}'` : null
+		});
+		items.push({
+			label: "Deploy Workspace",
+			description: "Deploy all files in the current workspace",
+			detail: wsnode.length > 0 ? `'${wsnode[0].source.toLowerCase()}' to '${wsnode[0].target.toLowerCase()}'` : null
+		});
 
 
-        vscode.window.showQuickPick(items, {matchOnDescription: true, placeHolder: "Choose a fsDeploy command:"}).then((selection:vscode.QuickPickItem) => {
-            if(!selection) 
-                return;
-            switch(selection.label) {
-                case "Deploy File":
-                    deploy(vscode.window.activeTextEditor.document.fileName);
-                    break;
-                case "Deploy Workspace":
-                    deployWorkspace();
-                    break;
-            }
-        });
-    });
+		vscode.window.showQuickPick(items, { matchOnDescription: true, placeHolder: "Choose a fsDeploy command:" }).then((selection: vscode.QuickPickItem) => {
+			if (!selection)
+				return;
+			switch (selection.label) {
+				case "Deploy File":
+					deploy(vscode.window.activeTextEditor.document.fileName);
+					break;
+				case "Deploy Workspace":
+					deployWorkspace();
+					break;
+			}
+		});
+	});
 
-    let cmdDeployFile = vscode.commands.registerCommand('fsdeploy.deployFile', () => {
-        deploy(vscode.window.activeTextEditor.document.fileName);
-    });
+	let cmdDeployFile = vscode.commands.registerCommand('fsdeploy.deployFile', () => {
+		deploy(vscode.window.activeTextEditor.document.fileName);
+	});
 
-    let cmdDeployWorkspace = vscode.commands.registerCommand('fsdeploy.deployWorkspace', () => {
-        deployWorkspace();
-    });
+	let cmdDeployWorkspace = vscode.commands.registerCommand('fsdeploy.deployWorkspace', () => {
+		deployWorkspace();
+	});
 
-    let onSave = vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
-        let deployOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployOnSave", true);
-        let deployWorkspaceOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployWorkspaceOnSave", true);
+	let onSave = vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
+		let deployOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployOnSave", true);
+		let deployWorkspaceOnSave = vscode.workspace.getConfiguration('fsdeploy').get("deployWorkspaceOnSave", true);
 
-        if (deployWorkspaceOnSave) {
-            deployWorkspace();
-        } else if (deployOnSave) {
-            deploy(e.fileName);
-        }
-    });
+		if (deployWorkspaceOnSave) {
+			deployWorkspace();
+		} else if (deployOnSave) {
+			deploy(e.fileName);
+		}
+	});
 
-    let onOpen = vscode.window.onDidChangeActiveTextEditor((e: vscode.TextEditor) => {
-        updateStatusBar();
-    });
+	let onOpen = vscode.window.onDidChangeActiveTextEditor((e: vscode.TextEditor) => {
+		updateStatusBar();
+	});
 
-    let updateStatusBar = function() {
-        let workspaceNode = getWorkspaceDeployNodes();
-        let fileNode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];	
+	let updateStatusBar = function () {
+		let workspaceNode = getWorkspaceDeployNodes();
+		let fileNode = vscode.window.activeTextEditor ? getFileDeployNodes(vscode.window.activeTextEditor.document.fileName) : [];
 
-        if(workspaceNode.length > 0 && fileNode.length > 0) {
-            statusBarItem.text = 'Deploy: $(check)';
-            statusBarItem.tooltip = "Workspace has a deployment target";
-        } else if(workspaceNode == null && fileNode.length > 0) {
-            statusBarItem.text = 'Deploy: $(stop)/$(check)';
-            statusBarItem.tooltip = "Workspace doesn't have a deployment target but file is in scope";
-        } else if(workspaceNode.length > 0 && fileNode.length <= 0) {
-            statusBarItem.text = 'Deploy: $(check)/$(stop)';
-            statusBarItem.tooltip = "Workspace has a deployment target but file isn't in scope";
-        } else {
-            statusBarItem.text = 'Deploy: $(stop)';
-            statusBarItem.tooltip = "Workspace and current file don't have any deployment targets";
-        }
-    }
+		if (workspaceNode.length > 0 && fileNode.length > 0) {
+			statusBarItem.text = 'Deploy: $(check)';
+			statusBarItem.tooltip = "Workspace has a deployment target";
+		} else if (workspaceNode == null && fileNode.length > 0) {
+			statusBarItem.text = 'Deploy: $(stop)/$(check)';
+			statusBarItem.tooltip = "Workspace doesn't have a deployment target but file is in scope";
+		} else if (workspaceNode.length > 0 && fileNode.length <= 0) {
+			statusBarItem.text = 'Deploy: $(check)/$(stop)';
+			statusBarItem.tooltip = "Workspace has a deployment target but file isn't in scope";
+		} else {
+			statusBarItem.text = 'Deploy: $(stop)';
+			statusBarItem.tooltip = "Workspace and current file don't have any deployment targets";
+		}
+	}
 
-    context.subscriptions.push(onSave);
-    context.subscriptions.push(onOpen);
-    //context.subscriptions.push(cmdDeployFile);
-    //context.subscriptions.push(cmdDeployWorkspace);
-    //context.subscriptions.push(cmdMenuOptions);
+	context.subscriptions.push(onSave);
+	context.subscriptions.push(onOpen);
+	//context.subscriptions.push(cmdDeployFile);
+	//context.subscriptions.push(cmdDeployWorkspace);
+	//context.subscriptions.push(cmdMenuOptions);
 
-    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_VALUE);
-    statusBarItem.command = 'fsdeploy.menuFunctions';
-    statusBarItem.show();
+	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, Number.MIN_VALUE);
+	statusBarItem.command = 'fsdeploy.menuFunctions';
+	statusBarItem.show();
 
-    updateStatusBar();
-    log("  -> fsdeploy activated.");
+	updateStatusBar();
+	log("  -> fsdeploy activated.");
 }
 
 function getFileDeployNodes(path: string): fsConfigNode[] {
@@ -124,7 +126,7 @@ function getWorkspaceDeployNodes(): fsConfigNode[] {
 	let fsnodes: fsConfigNode[] = [];
 	nodes.forEach((node: fsConfigNode) => {
 		const sourcePath = getAbsolutePath(node.source);
-		if (sourcePath.toLowerCase().startsWith(vscode.workspace.rootPath.toLowerCase())) {
+		if (sourcePath.toLowerCase().startsWith(getWorkspaceRootPath().toLowerCase())) {
 			fsnodes.push(node);
 		}
 	});
@@ -134,128 +136,183 @@ function getWorkspaceDeployNodes(): fsConfigNode[] {
 
 // this method is called when your extension is deactivated
 export function deactivate() {
+	log("  -> fsdeploy deactivated.");
 }
 
-function deploy(filePath: string): void {
-	log(`Deploy file ${filePath}`);
+async function deploy(filePath: string, notify: boolean = true) {
+	return new Promise((resolve, reject) => {
+		log(`Deploy file ${filePath}`);
 
-	let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
-	let path: string = filePath.substr(0, filePath.lastIndexOf(Path.sep));
-	let fileName: string = filePath.substr(filePath.lastIndexOf(Path.sep) + 1);
+		let nodes: fsConfigNode[] = getFileDeployNodes(filePath);
+		let path: string = filePath.substr(0, filePath.lastIndexOf(Path.sep));
+		let fileName: string = filePath.substr(filePath.lastIndexOf(Path.sep) + 1);
 
-	if (nodes.length > 0) {
-		let origiStatus = statusBarItem.text;
-		statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
+		if (nodes.length > 0) {
+			let origiStatus = statusBarItem.text;
+			if (notify) statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
 
-		nodes.forEach((node: fsConfigNode) => {
-			const sourcePath = getAbsolutePath(node.source);
+			nodes.forEach((node: fsConfigNode) => {
+				const sourcePath = getAbsolutePath(node.source);
+				let globOpt: object = { dot: true, nocase: true, debug: false };
 
-			if (node.scp && node.scp.enabled) {
-				let subpath: string = path.substr(sourcePath.length + 1).replace(/\\/g, '/');
-				const targetPath = node.target;
-				let target: string = `${targetPath}/${subpath}`;
-
-				var Client = require('ssh2-sftp-client');
-				var config = {
-					host: node.scp.host,
-					port: node.scp.port,
-					username: node.scp.username,
-					password: node.scp.password
-				};
-				var sftp = new Client();
-
-				let data = fs.createReadStream(filePath);
-
-				sftp.connect(config)
-					.then(() => {
-						sftp.mkdir(target, true);
-						var promise = sftp.put(data, `${target}/${fileName}`);
-						log(`  -> done on ${target}${Path.sep}${fileName}`);
-						return promise;
-					})
-					.then(() => {
-						return sftp.end();
-					})
-					.catch(err => {
-						log(`  -> ERROR ${err} on ${target}${Path.sep}${fileName}`);
-					});
-			} else {
-				let subpath: string = path.substr(sourcePath.length);
-				const targetPath = getAbsolutePath(node.target);
-				let target: string = `${targetPath}${Path.sep}${subpath}`;
-				mkdirs(target);
-
-				try {
-					fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(filePath));
-					//fse.copySync(filePath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
-					log(`  -> done on ${target}${Path.sep}${fileName}`);
-				} catch (ex) {
-					log(`  -> ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+				if (minimatch(fileName, node.exclude, globOpt) || minimatch(filePath, node.exclude, globOpt)) {
+					return false;
 				}
-			}
-		});
 
-		statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
-		setTimeout(() => {
-			statusBarItem.text = origiStatus;
-		}, 3000);
-	}
-};
+				if (minimatch(fileName, node.include, globOpt) || minimatch(filePath, node.include, globOpt)) {
+					if (node.scp && node.scp.enabled) {
+						let subpath: string = path.substr(sourcePath.length + 1).replace(/\\/g, '/');
+						const targetPath = node.target;
+						let target: string = `${targetPath}/${subpath}`;
 
-function deployWorkspace() : void {
-    // get the fsdeploy.node mapping for the selected workspace
-    // and only pick out the first match if there are multiple
-    let fsnodes: fsConfigNode[] = getWorkspaceDeployNodes();
+						var config = {
+							host: node.scp.host,
+							port: node.scp.port,
+							username: node.scp.username,
+							password: node.scp.password,
+							retries: 0
+						};
+						var sftp = new sftpClient();
 
-    let origiStatus = statusBarItem.text;
+						try {
+							let rs = fs.createReadStream(filePath);
 
-    if(fsnodes.length > 0) {
-        fsnodes.forEach(function(node) {
-            const targetPath = getAbsolutePath(node.target);
+							rs.on('error', (err) => {
+								log(`  -> ${err} on ${target}${Path.sep}${fileName}`);
+								vscode.window.showInformationMessage(`Error on deploying ${fileName}.\n${err}`);
+								reject();
+							});
 
-            // remove deploy dir
-            if(node.deleteTargetOnDeploy){
-                  try {
-                    log(`Delete node target: ${targetPath}`);
-                    fse.removeSync(targetPath);    
-                  } catch (error) {
-                    log(`Error on deleting node target: ${targetPath}`);
-                  }                 
-            }
+							rs.on('close', async () => {
+								resolve();
+							});
 
-            statusBarItem.text = `${origiStatus} deploying to '${targetPath}'`;
-            // find files using a glob include/exclude and deploy accordingly
-            vscode.workspace.findFiles(node.include, node.exclude).then((files: vscode.Uri[]) => {
-                files.forEach((file) => {
-                    if(file.scheme == "file") {
-						log(`Deploy file ${file.fsPath}`);
-						let path: string = file.fsPath.substr(0, file.fsPath.lastIndexOf(Path.sep));
-						let fileName: string = file.fsPath.substr(file.fsPath.lastIndexOf(Path.sep) + 1);
-						const sourcePath = getAbsolutePath(node.source);
-						let subpath: string = path.substr(sourcePath.length).replace(/^(\/|\\)|(\/|\\)$/g, '');
+							rs.on('open', async () => {
+								try {
+									await sftp.connect(config);
+									await sftp.mkdir(target, true);
+									await sftp.put(rs, `${target}/${fileName}`);
+									//await sftp.fastPut(filePath.replace(/\\/g, '/'), `${target}/${fileName}`);
+									log(`  -> done on ${target}${Path.sep}${fileName}`);
+									resolve();
+								} catch (ex) {
+									rs.close();
+									log(`  -> ${ex} on ${target}${Path.sep}${fileName}`);
+									vscode.window.showInformationMessage(`Error on deploying ${fileName}.\n${ex}`);
+									reject();
+								} finally {
+									await sftp.end();
+									rs.close();
+								}
+							});
+						} catch (ex) {
+							log(`  -> ${ex} on ${target}${Path.sep}${fileName}`);
+							vscode.window.showInformationMessage(`Error on deploying ${fileName}. ${ex}`);
+							reject();
+						}
+					} else {
+						let subpath: string = path.substr(sourcePath.length);
+						const targetPath = getAbsolutePath(node.target);
 						let target: string = `${targetPath}${Path.sep}${subpath}`;
-
 						mkdirs(target);
 
 						try {
-							fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(file.fsPath));
-							//fse.copySync(file.fsPath, `${target}${Path.sep}${fileName}`, {"overwrite":true, "preserveTimestamps": false});
+							fs.writeFileSync(`${target}${Path.sep}${fileName}`, fs.readFileSync(filePath));
 							log(`  -> done on ${target}${Path.sep}${fileName}`);
+							resolve();
 						} catch (ex) {
-							log(`  -> !ERROR ${ex} on ${target}${Path.sep}${fileName}`);
+							log(`  -> ${ex} on ${target}${Path.sep}${fileName}`);
+							vscode.window.showInformationMessage(`Error on deploying ${fileName}.\n${ex}`);
+							reject();
 						}
 					}
-					vscode.window.showInformationMessage(`Finished deploying '${files.length}' files to ${targetPath}.`);
-					statusBarItem.text = `${origiStatus} finished deploying`;
-					setTimeout(() => {
-						statusBarItem.text = origiStatus;
-					}, 3000);
-				});
+				}
 			});
+
+			if (notify) {
+				statusBarItem.text = `${origiStatus} deployed '${fileName}'`;
+				setTimeout(() => {
+					statusBarItem.text = origiStatus;
+				}, 3000);
+			}
+		} else {
+			reject();
+		}
+	});
+};
+
+async function deployWorkspace(): Promise<void> {
+	// get the fsdeploy.node mapping for the selected workspace
+	// and only pick out the first match if there are multiple
+	let fsnodes: fsConfigNode[] = getWorkspaceDeployNodes();
+
+	if (fsnodes.length > 0) {
+		let origiStatus = statusBarItem.text;
+		statusBarItem.text = `${origiStatus} deploying Workspace`;
+
+		let current_progress = 0;
+		let last_progress = 0;
+
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			cancellable: true,
+			title: "Deploying Workspace"
+		}, async (progress, token) => {
+			let overall_items = 0;
+			let processed_items = 0;
+
+			for (const node of fsnodes) {
+				// remove deploy dir
+				if (node.deleteTargetOnDeploy) {
+					const targetPath = getAbsolutePath(node.target);
+
+					try {
+						log(`Delete node target: ${targetPath}`);
+						fse.removeSync(targetPath);
+					} catch (error) {
+						log(`Error on deleting node target: ${targetPath}`);
+					}
+				}
+
+				var files = await vscode.workspace.findFiles(node.include, node.exclude);
+				overall_items += files.length;
+				for (const file of files) {
+					if (file.scheme == "file") {
+						try {
+							await deploy(file.fsPath, false);
+						} catch (ex) {
+							console.log(ex);
+						} finally {
+							processed_items++;
+							current_progress = 100 / overall_items * processed_items;
+							if (Math.floor(current_progress) > Math.floor(last_progress)) {
+								last_progress = current_progress;
+								progress.report({ increment: Math.floor(current_progress - last_progress), message: `${processed_items} of ${overall_items} files` });
+							}
+							if (Math.floor(current_progress * 100) % 10 == 0) {
+								progress.report({ message: `${processed_items} of ${overall_items} files` });
+							}
+						}
+					}
+					if (token.isCancellationRequested) {
+						break;
+					}
+				}
+				if (token.isCancellationRequested) {
+					break;
+				}
+			}
+			let canceled = token.isCancellationRequested ? '\nThe operation was cancelled by you.' : '';
+			statusBarItem.text = `${origiStatus} deployed ${processed_items} of ${overall_items} files in Workspace`;
+			vscode.window.showInformationMessage(`Finished deploying ${processed_items} of ${overall_items} files in Workspace. ${canceled}`);
+			setTimeout(() => {
+				statusBarItem.text = origiStatus;
+			}, 3000);
 		});
+
 	} else {
-		vscode.window.showErrorMessage(`Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`);
-		log(`ERROR: Couldn't find matching deploy rule for '${vscode.workspace.rootPath}'`)
+		vscode.window.showErrorMessage(`Couldn't find matching deploy rule for '${getWorkspaceRootPath()}'`);
+		log(`Couldn't find matching deploy rule for '${getWorkspaceRootPath()}'`)
 	}
 }
 
@@ -265,7 +322,13 @@ function log(msg: string) {
 }
 
 function getAbsolutePath(relativePath: string): string {
-	return Path.resolve(vscode.workspace.rootPath, relativePath).replace(/[\\/]$/g, "");
+	return Path.resolve(getWorkspaceRootPath(), relativePath).replace(/[\\/]$/g, "");
+}
+
+function getWorkspaceRootPath(): string {
+	return vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+		? vscode.workspace.workspaceFolders[0].uri.fsPath
+		: "";
 }
 
 function mkdirs(path: string): void {
