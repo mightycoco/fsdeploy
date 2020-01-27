@@ -105,8 +105,13 @@ scp {
 
 ## Known Issues
 scp doesn't support certificate authentication. It's recommended to have a user which has only write permissions to the desired remote folder used in the deploy binding. No read is required.
+scp doesn't allow deleteTargetOnDeploy right now
 
 ## Changelog
+
+### 0.1.12
+- minor code restructure
+- fix progress bar when deploying entire workspace introduced in 0.1.10
 
 ### 0.1.11
 - the single file deploy as well as the deployOnSave now considers the include/exclude globe pattern of the deploy binding (https://github.com/mightycoco/fsdeploy/issues/8#issue-484234843)

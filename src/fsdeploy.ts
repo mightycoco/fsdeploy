@@ -151,7 +151,7 @@ async function deploy(filePath: string, notify: boolean = true) {
 			let origiStatus = statusBarItem.text;
 			if (notify) statusBarItem.text = `${origiStatus} deploying '${fileName}'`;
 
-			nodes.forEach((node: fsConfigNode) => {
+			nodes.forEach(async (node: fsConfigNode) => {
 				const sourcePath = getAbsolutePath(node.source);
 				let globOpt: object = { dot: true, nocase: true, debug: false };
 
@@ -175,36 +175,17 @@ async function deploy(filePath: string, notify: boolean = true) {
 						var sftp = new sftpClient();
 
 						try {
-							let rs = fs.createReadStream(filePath);
-
-							rs.on('error', (err) => {
-								log(`  -> ${err} on ${target}${Path.sep}${fileName}`);
-								vscode.window.showInformationMessage(`Error on deploying ${fileName}.\n${err}`);
-								reject();
-							});
-
-							rs.on('close', async () => {
+							try {
+								await sftp.connect(config);
+								await sftp.mkdir(target, true);
+								await sftp.fastPut(filePath.replace(/\\/g, '/'), `${target}/${fileName}`);
 								resolve();
-							});
-
-							rs.on('open', async () => {
-								try {
-									await sftp.connect(config);
-									await sftp.mkdir(target, true);
-									await sftp.put(rs, `${target}/${fileName}`);
-									//await sftp.fastPut(filePath.replace(/\\/g, '/'), `${target}/${fileName}`);
-									log(`  -> done on ${target}${Path.sep}${fileName}`);
-									resolve();
-								} catch (ex) {
-									rs.close();
-									log(`  -> ${ex} on ${target}${Path.sep}${fileName}`);
-									vscode.window.showInformationMessage(`Error on deploying ${fileName}.\n${ex}`);
-									reject();
-								} finally {
-									await sftp.end();
-									rs.close();
-								}
-							});
+							} catch (ex) {
+								console.log(ex);
+								reject();
+							} finally {
+								await sftp.end();
+							}
 						} catch (ex) {
 							log(`  -> ${ex} on ${target}${Path.sep}${fileName}`);
 							vscode.window.showInformationMessage(`Error on deploying ${fileName}. ${ex}`);
@@ -286,8 +267,8 @@ async function deployWorkspace(): Promise<void> {
 							processed_items++;
 							current_progress = 100 / overall_items * processed_items;
 							if (Math.floor(current_progress) > Math.floor(last_progress)) {
+								progress.report({ increment: Math.floor(current_progress) - Math.floor(last_progress), message: `${processed_items} of ${overall_items} files` });
 								last_progress = current_progress;
-								progress.report({ increment: Math.floor(current_progress - last_progress), message: `${processed_items} of ${overall_items} files` });
 							}
 							if (Math.floor(current_progress * 100) % 10 == 0) {
 								progress.report({ message: `${processed_items} of ${overall_items} files` });
