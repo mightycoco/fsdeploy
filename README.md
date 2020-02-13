@@ -109,6 +109,9 @@ scp doesn't allow deleteTargetOnDeploy right now
 
 ## Changelog
 
+### 0.1.13
+- fix compatibility issue of minimatch vs. native globe in fs-module (https://github.com/mightycoco/fsdeploy/issues/16)
+
 ### 0.1.12
 - minor code restructure
 - fix progress bar when deploying entire workspace introduced in 0.1.10

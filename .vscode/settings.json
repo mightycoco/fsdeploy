@@ -18,7 +18,7 @@
 	"fsdeploy.nodes":
 	[
 		{
-			"source":"C:\\data\\p4_clients\\ac_main\\ac\\main\\pkg\\AS_BIZADMIN_CLIENT",
+			"source":"C:\\Program Files\\nodejs\\fsdeploy\\src\\fsdeploy.ts",
 			"target":"/tmp/fsdeploy",
 			"include":"*",
 			"exclude":"",

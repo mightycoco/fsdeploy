@@ -153,13 +153,14 @@ async function deploy(filePath: string, notify: boolean = true) {
 
 			nodes.forEach(async (node: fsConfigNode) => {
 				const sourcePath = getAbsolutePath(node.source);
-				let globOpt: object = { dot: true, nocase: true, debug: false };
+				let globOpt: object = { dot: true, nocase: true, debug: false, nobrace: false, matchBase: true };
 
-				if (minimatch(fileName, node.exclude, globOpt) || minimatch(filePath, node.exclude, globOpt)) {
+				if (minimatch(fileName, "**/"+node.exclude, globOpt) || minimatch(filePath, "**/"+node.exclude, globOpt)) {
+					log(`  -> Exclude match on ${fileName} or ${filePath} on ${node.exclude}`);
 					return false;
 				}
 
-				if (minimatch(fileName, node.include, globOpt) || minimatch(filePath, node.include, globOpt)) {
+				if (minimatch(fileName, "**/"+node.include, globOpt) || minimatch(filePath, "**/"+node.include, globOpt)) {
 					if (node.scp && node.scp.enabled) {
 						let subpath: string = path.substr(sourcePath.length + 1).replace(/\\/g, '/');
 						const targetPath = node.target;
@@ -207,6 +208,8 @@ async function deploy(filePath: string, notify: boolean = true) {
 							reject();
 						}
 					}
+				} else {
+					log(`  -> No include match on ${fileName} or ${filePath} on ${node.include}`);
 				}
 			});
 
@@ -217,6 +220,7 @@ async function deploy(filePath: string, notify: boolean = true) {
 				}, 3000);
 			}
 		} else {
+			log(`  -> No nodes found for binding`);
 			reject();
 		}
 	});
