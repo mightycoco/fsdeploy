@@ -125,6 +125,10 @@ function getWorkspaceDeployNodes(): fsConfigNode[] {
 	let nodes: fsConfigNode[] = vscode.workspace.getConfiguration('fsdeploy').get("nodes", []);
 	let fsnodes: fsConfigNode[] = [];
 	nodes.forEach((node: fsConfigNode) => {
+		if (node.notInWorkspace) {
+			fsnodes.push(node);
+			return;
+		}
 		const sourcePath = getAbsolutePath(node.source);
 		if (sourcePath.toLowerCase().startsWith(getWorkspaceRootPath().toLowerCase())) {
 			fsnodes.push(node);
@@ -259,7 +263,7 @@ async function deployWorkspace(): Promise<void> {
 					}
 				}
 
-				var files = await vscode.workspace.findFiles(node.include, node.exclude);
+				var files = await vscode.workspace.findFiles(new vscode.RelativePattern(node.source, node.include), node.exclude);
 				overall_items += files.length;
 				for (const file of files) {
 					if (file.scheme == "file") {

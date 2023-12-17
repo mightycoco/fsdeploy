@@ -77,6 +77,10 @@
 								"type": "boolean",
 								"description": "Remove the target folder on deployment"
 							},
+							"notInWorkspace": {
+								"type": "boolean",
+								"description": "If true, the source folder is not in the workspace"
+							},
 							"scp": {
 								"type": "object",
 								"title": "Configuration for SCP if target is a linux system",
