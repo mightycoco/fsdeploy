@@ -5,6 +5,7 @@ interface fsConfigNode {
     target: string;
     exclude: string;
     include: string;
+    notInWorkspace: boolean;
 	deleteTargetOnDeploy: boolean;
 	deployWorkspaceOnSave: boolean;
     scp: {
